@@ -31,13 +31,9 @@ set_keyword_list = {
 # 状態を保持したい変数を指定
 if 'set_domains' not in st.session_state:
     st.session_state.set_domains = "BBC"  # デフォルトをBBCにしておく
-    st.session_state.article_blank = True  # Trueの時のみ、記事の取得、タイトルの翻訳を行う
-
-if 'set_keyword' not in st.session_state:
     st.session_state.set_keyword = "AI"  # デフォルトをAIにしておく
-
-if 'set_article' not in st.session_state:
-    st.session_state.set_article = ""  # デフォルトを""にしておく
+    st.session_state.article_blank = None  # Trueの時のみ、記事の取得、タイトルの翻訳を行う 
+    st.session_state.index_japanese_title_pair_list = [None]  # 選択した記事、デフォルトを[None]にしておく
 
 
 
@@ -107,53 +103,49 @@ st.title("Newsアプリ") # タイトル
 
 st.session_state.set_keyword= st.selectbox("キーワードを選択してください", set_keyword_list.keys())
 st.session_state.set_domains = st.selectbox("ソースを選択してください", set_domains_list.keys())
+st.session_state.number_of_part = st.slider('表示する記事の数', 1, 20, 5)
+
+# ボタンを押した時に記事取得->タイトル翻訳表示が行われるようにしたい
+if st.button("Get Articles", type="primary") :
+    st.session_state.article_blank = True  # Tureの時のみ、後段のif内が実行される
+
 
 if st.session_state.article_blank :
 
     # 記事の取得
     data_articles = get_articles(set_keyword_list[st.session_state.set_keyword], set_domains_list[st.session_state.set_domains]) 
 
-    # st.dataframe(data_articles)
-
-    # お試しとして一部分のみを実行する。
-    part_number = 5
-    part_of_data_articles = data_articles.head(part_number)
+    # 表示する記事の数を絞る（記事数の方が少ない場合はすべて表示されるはず）
+    part_of_data_articles = data_articles.head(st.session_state.number_of_part)
 
     # "日本語タイトル"のコラムを新規に作成して追加
     add_japanese_column(part_of_data_articles)
 
-    # st.dataframe(part_of_data_articles["日本語タイトル"])
-
     st.session_state.data_articles = part_of_data_articles
 
+    # URLを取得する際にindexを使いたいので、(index+日本語タイトル)を一つの文字列にしたリストを作る
     st.session_state.index_japanese_title_pair_list = []
     for index, value in enumerate(part_of_data_articles["日本語タイトル"]):
-        st.session_state.index_japanese_title_pair_list.append([index, value])
-    
-       
+        _str = str(index) + "_" + str(value)   # 文字列からindexを抽出する際には"_"でsplitするつもり
+        st.session_state.index_japanese_title_pair_list.append(_str)
+ 
     st.session_state.article_blank = None  # 記事を取得、翻訳済みなのでNoneにする
-
-
-# st.session_state.set_article = st.radio(
-#     "記事のタイトル",
-#     index_japanese_title_pair_list,
-#     index = None,
-# )
-
-# st.write("選択した記事：" + str(st.session_state.set_article))
-
+    
+# ラジオボタンで記事を選択する
 set_article = st.radio(
     "記事のタイトル",
     st.session_state.index_japanese_title_pair_list,
     index = None,
 )
-print(set_article)
 
-st.write("選択した記事：" + str(set_article))
+# ラジオボタンを押したときのみ以下を実行する
+if set_article != None :
 
-# set_articleがstrになっている？　文字列からindexを抽出する必要がありそう
-# st.write(str(set_article[0]))
+    st.write("選択した記事：" + str(set_article.split("_")[1]))   # "_"の後ろ部分のタイトルを抽出
 
-# st.write("選択した記事のURL：" + str(st.session_state.data_articles['URL'][set_article[0]]))
+    st.session_state.article_index = int(set_article.split("_")[0])  # "_"の手前部分のindexを抽出
 
+    st.session_state.article_url = st.session_state.data_articles["URL"][st.session_state.article_index]  # URLを取得　->　スクレイピングに使ってください
+    
+    st.write("選択した記事のURL：" + str(st.session_state.article_url))
 
