@@ -108,7 +108,7 @@ st.title("Newsアプリ") # タイトル
 st.session_state.set_keyword= st.selectbox("キーワードを選択してください", set_keyword_list.keys())
 st.session_state.set_domains = st.selectbox("ソースを選択してください", set_domains_list.keys())
 
-if st.session_state.article_brank :
+if st.session_state.article_blank :
 
     # 記事の取得
     data_articles = get_articles(set_keyword_list[st.session_state.set_keyword], set_domains_list[st.session_state.set_domains]) 
