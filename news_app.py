@@ -36,7 +36,7 @@ if 'set_domains' not in st.session_state:
     st.session_state.index_japanese_title_pair_list = [None]  # 選択した記事、デフォルトを[None]にしておく
 
 
-
+# NEWS APIを使って日時、タイトル、コンテンツ、URLを取得
 def get_articles(keyword, domains):
     # Init
     newsapi = NewsApiClient(api_key=NEWS_API_KEY)
@@ -66,7 +66,7 @@ def get_articles(keyword, domains):
     return data_articles
 
 # タイトルを日本語に翻訳
-def transrate_titl_to_japanese(content_text_to_gpt):
+def transrate_title_to_japanese(content_text_to_gpt):
     
     openai.api_key = OPENAI_API_KEY
     
@@ -88,7 +88,7 @@ def add_japanese_column(data_articles):
     _list = []
     for i in range(len(data_articles)):
         # タイトルを日本語に翻訳
-        output_japanese_title = transrate_titl_to_japanese(data_articles["タイトル"][i])
+        output_japanese_title = transrate_title_to_japanese(data_articles["タイトル"][i])
         # 翻訳されたタイトルをリストに追加
         _list.append(output_japanese_title)
 
