@@ -31,7 +31,7 @@ set_keyword_list = {
 # 状態を保持したい変数を指定
 if 'set_domains' not in st.session_state:
     st.session_state.set_domains = "BBC"  # デフォルトをBBCにしておく
-    st.session_state.article_brank = True  # Trueの時のみ、記事の取得、タイトルの翻訳を行う
+    st.session_state.article_blank = True  # Trueの時のみ、記事の取得、タイトルの翻訳を行う
 
 if 'set_keyword' not in st.session_state:
     st.session_state.set_keyword = "AI"  # デフォルトをAIにしておく
@@ -122,7 +122,7 @@ if st.session_state.article_brank :
     # "日本語タイトル"のコラムを新規に作成して追加
     add_japanese_column(part_of_data_articles)
 
-    st.dataframe(part_of_data_articles["日本語タイトル"])
+    # st.dataframe(part_of_data_articles["日本語タイトル"])
 
     st.session_state.data_articles = part_of_data_articles
 
@@ -131,7 +131,7 @@ if st.session_state.article_brank :
         st.session_state.index_japanese_title_pair_list.append([index, value])
     
        
-    st.session_state.article_brank = None  # 記事を取得、翻訳済みなのでNoneにする
+    st.session_state.article_blank = None  # 記事を取得、翻訳済みなのでNoneにする
 
 
 # st.session_state.set_article = st.radio(
