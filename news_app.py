@@ -1,15 +1,12 @@
 import streamlit as st
+from newsapi import NewsApiClient  #News APIから記事情報を取得
+import pandas as pd
+import openai #ChatGPTでの翻訳機能
+from datetime import datetime, timedelta# 現在時刻などの時間を扱う機能をインポート
 
 # 環境ファイルからAPI KEYを指定するのに使用
 import os
 from dotenv import load_dotenv
-
-#News APIから記事情報を取得
-from newsapi import NewsApiClient
-import pandas as pd
-
-#ChatGPTでの翻訳機能
-import openai
 
 # .envファイルのパスを指定して読み込む
 load_dotenv('.env')
@@ -37,15 +34,15 @@ if 'set_domains' not in st.session_state:
 
 
 # NEWS APIを使って日時、タイトル、コンテンツ、URLを取得
-def get_articles(keyword, domains):
+def get_articles(keyword, domains, date_from_param, date_to):
     # Init
     newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 
     all_articles = newsapi.get_everything(q=keyword,
                                         #sources='bbc-news',
                                         domains=domains,
-                                        from_param='2023-10-10',
-                                        to='2023-11-04',
+                                        from_param=date_from_param,
+                                        to=date_to,
                                         language='en',
                                         #sort_by='relevancy',
                                         #page=2
@@ -103,7 +100,9 @@ st.title("Newsアプリ") # タイトル
 
 st.session_state.set_keyword= st.selectbox("キーワードを選択してください", set_keyword_list.keys())
 st.session_state.set_domains = st.selectbox("ソースを選択してください", set_domains_list.keys())
+st.session_state.days_back = st.slider('何日前までの記事を取得しますか', 1, 30, 10)
 st.session_state.number_of_part = st.slider('表示する記事の数', 1, 20, 5)
+
 
 # ボタンを押した時に記事取得->タイトル翻訳表示が行われるようにしたい
 if st.button("Get Articles", type="primary") :
@@ -111,9 +110,12 @@ if st.button("Get Articles", type="primary") :
 
 
 if st.session_state.article_blank :
+    
+    date_to = datetime.now().date()
+    date_from_param = date_to - timedelta(days=st.session_state.days_back)
 
     # 記事の取得
-    data_articles = get_articles(set_keyword_list[st.session_state.set_keyword], set_domains_list[st.session_state.set_domains]) 
+    data_articles = get_articles(set_keyword_list[st.session_state.set_keyword], set_domains_list[st.session_state.set_domains], date_from_param, date_to) 
 
     # 表示する記事の数を絞る（記事数の方が少ない場合はすべて表示されるはず）
     part_of_data_articles = data_articles.head(st.session_state.number_of_part)
@@ -125,8 +127,9 @@ if st.session_state.article_blank :
 
     # URLを取得する際にindexを使いたいので、(index+日本語タイトル)を一つの文字列にしたリストを作る
     st.session_state.index_japanese_title_pair_list = []
-    for index, value in enumerate(part_of_data_articles["日本語タイトル"]):
-        _str = str(index) + "_" + str(value)   # 文字列からindexを抽出する際には"_"でsplitするつもり
+    
+    for article in part_of_data_articles.iterrows():
+        _str = str(article[0]) + "_" + str(article[1]["日時"]) + "：" + str(article[1]["日本語タイトル"])   # 文字列からindexを抽出する際には"_"でsplitするつもり
         st.session_state.index_japanese_title_pair_list.append(_str)
  
     st.session_state.article_blank = None  # 記事を取得、翻訳済みなのでNoneにする
@@ -141,7 +144,7 @@ set_article = st.radio(
 # ラジオボタンを押したときのみ以下を実行する
 if set_article != None :
 
-    st.write("選択した記事：" + str(set_article.split("_")[1]))   # "_"の後ろ部分のタイトルを抽出
+    st.write("選択した記事：" + str(set_article.split("_")[1]))   # "_"の後ろ部分の日時：タイトルを抽出
 
     st.session_state.article_index = int(set_article.split("_")[0])  # "_"の手前部分のindexを抽出
 
