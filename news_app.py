@@ -1,5 +1,7 @@
 #ライブラリをimport
 import streamlit as st
+from PIL import Image #イメージを表示
+import time #ロード中の表示画面いれる
 import pandas as pd
 from datetime import datetime, timedelta# 現在時刻などの時間を扱う機能をインポート
 from newsapi import NewsApiClient  #News APIから記事情報を取得
@@ -8,7 +10,7 @@ import os # 環境ファイルからAPI KEYを指定
 from dotenv import load_dotenv
 import requests #Web記事のスクレイピング
 from bs4 import BeautifulSoup
-import time #データロード中に、ロード中と表示
+from PIL import Image
 
 # .envファイルのパスを指定して読み込む
 load_dotenv('.env')
@@ -72,7 +74,7 @@ def transrate_title_to_japanese(content_text_to_gpt):
     
     openai.api_key = OPENAI_API_KEY
     
-    request_to_gpt = "以下の英語の記事のタイトルを、日本語10文字以内で翻訳してください" + content_text_to_gpt
+    request_to_gpt = "以下の英語の記事のタイトルを日本語に翻訳してください" + content_text_to_gpt
     
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -105,6 +107,10 @@ def add_japanese_column(data_articles):
 #<Streamlitでフロント画面を作成>------ここから
 
 st.title("海外ニュース翻訳アプリ") # タイトル
+
+image = Image.open('newspaperimage.jpg') #新聞画像挿入
+st.image(image, caption=None)
+
 st.markdown("気になる記事を選択すると、内容を確認できます")
 
 st.sidebar.header("検索条件を選び「記事を表示」クリック")
@@ -117,7 +123,8 @@ st.session_state.number_of_part = st.sidebar.slider('表示する記事の数', 
 # ボタンを押した時に記事取得->タイトル翻訳表示が行われるようにしたい
 if st.sidebar.button("記事を表示", type="primary") :
     st.session_state.article_blank = True  # Tureの時のみ、後段のif内が実行される
-
+#with st.spinner("タイトル取得中です"):
+#   time.sleep(5) #ここ、実際のロード時間に基づき表示できるようにしたい。。
 
 if st.session_state.article_blank :
     
