@@ -116,8 +116,8 @@ st.markdown("気になる記事を選択すると、内容を確認できます"
 st.sidebar.header("検索条件を選び「記事を表示」クリック")
 st.session_state.set_keyword= st.sidebar.selectbox("キーワードを選択", set_keyword_list.keys())
 st.session_state.set_domains = st.sidebar.selectbox("ソースを選択", set_domains_list.keys())
-st.session_state.days_back = st.sidebar.slider('何日前までの記事を取得しますか', 1, 5, 3)
-st.session_state.number_of_part = st.sidebar.slider('表示する記事の数', 1, 10, 5)
+st.session_state.days_back = st.sidebar.slider('何日前までの記事を取得しますか', 1, 30, 10)
+st.session_state.number_of_part = st.sidebar.slider('表示する記事の数', 1, 10, 1)
 
 
 # ボタンを押した時に記事取得->タイトル翻訳表示が行われるようにしたい
@@ -128,29 +128,31 @@ if st.sidebar.button("記事を表示", type="primary") :
 
 if st.session_state.article_blank :
     
-    date_to = datetime.now().date()
-    date_from_param = date_to - timedelta(days=st.session_state.days_back)
+    with st.spinner("検索して記事を取得中です"):
     
+        date_to = datetime.now().date()
+        date_from_param = date_to - timedelta(days=st.session_state.days_back)
+        
 
-    # 記事の取得
-    data_articles = get_articles(set_keyword_list[st.session_state.set_keyword], set_domains_list[st.session_state.set_domains], date_from_param, date_to) 
+        # 記事の取得
+        data_articles = get_articles(set_keyword_list[st.session_state.set_keyword], set_domains_list[st.session_state.set_domains], date_from_param, date_to) 
 
-    # 表示する記事の数を絞る（記事数の方が少ない場合はすべて表示されるはず）
-    part_of_data_articles = data_articles.head(st.session_state.number_of_part)
+        # 表示する記事の数を絞る（記事数の方が少ない場合はすべて表示されるはず）
+        part_of_data_articles = data_articles.head(st.session_state.number_of_part)
 
-    # "日本語タイトル"のコラムを新規に作成して追加
-    add_japanese_column(part_of_data_articles)
+        # "日本語タイトル"のコラムを新規に作成して追加
+        add_japanese_column(part_of_data_articles)
 
-    st.session_state.data_articles = part_of_data_articles
+        st.session_state.data_articles = part_of_data_articles
 
-    # URLを取得する際にindexを使いたいので、(index+日本語タイトル)を一つの文字列にしたリストを作る
-    st.session_state.index_japanese_title_pair_list = []
+        # URLを取得する際にindexを使いたいので、(index+日本語タイトル)を一つの文字列にしたリストを作る
+        st.session_state.index_japanese_title_pair_list = []
+        
+        for article in part_of_data_articles.iterrows():
+            _str = str(article[0]) + "_" + str(article[1]["日時"]) + ":" + str(article[1]["日本語タイトル"])   # 文字列からindexを抽出する際には"_"でsplitするつもり
+            st.session_state.index_japanese_title_pair_list.append(_str)
     
-    for article in part_of_data_articles.iterrows():
-        _str = str(article[0]) + "_" + str(article[1]["日時"]) + ":" + str(article[1]["日本語タイトル"])   # 文字列からindexを抽出する際には"_"でsplitするつもり
-        st.session_state.index_japanese_title_pair_list.append(_str)
- 
-    st.session_state.article_blank = None  # 記事を取得、翻訳済みなのでNoneにする
+        st.session_state.article_blank = None  # 記事を取得、翻訳済みなのでNoneにする
         
 # ラジオボタンで記事を選択する
 
@@ -164,41 +166,43 @@ st.markdown('<span style = "font-size: smaller;">"**選択した記事のURL・�
 
 # ラジオボタンを押したときのみ以下を実行する
 if set_article != None :
+    
+    with st.spinner("記事を要約中です"):
 
-    #st.write("選択した記事：" + str(set_article.split("_")[1]))   # "_"の後ろ部分の日時：タイトルを抽出
+        #st.write("選択した記事：" + str(set_article.split("_")[1]))   # "_"の後ろ部分の日時：タイトルを抽出
 
-    st.session_state.article_index = int(set_article.split("_")[0])  # "_"の手前部分のindexを抽出
+        st.session_state.article_index = int(set_article.split("_")[0])  # "_"の手前部分のindexを抽出
 
-    st.session_state.article_url = st.session_state.data_articles["URL"][st.session_state.article_index]  # URLを取得->スクレイピングに使ってください
-    
-    st.write("URL:" + str(st.session_state.article_url))
-    
-    #ラジオボタンで選択した記事の要約を表示----
-    REQUEST_URL = st.session_state.article_url  #アクセス先をREQUEST_URLを代入
-    res = requests.get(REQUEST_URL) #リクエストしたデータをresに代入
-    
-    #BBCでのスクレイピング機能
-    soup = BeautifulSoup(res.text,"html.parser")
-    content = soup.select('#main-content > article')
-    lines = []
-    for t in content:
-        lines.append(t.text)
-    article = ' '.join(lines) #辞書型からテキストに変更
-    
-    #ChatGPTでの翻訳機能
-    def run_gpt(content_to_text):
-        request_to_gpt = "以下を日本語に翻訳したうえで100文字以内で要約してください。" + content_to_text
+        st.session_state.article_url = st.session_state.data_articles["URL"][st.session_state.article_index]  # URLを取得->スクレイピングに使ってください
+        
+        st.write("URL:" + str(st.session_state.article_url))
+        
+        #ラジオボタンで選択した記事の要約を表示----
+        REQUEST_URL = st.session_state.article_url  #アクセス先をREQUEST_URLを代入
+        res = requests.get(REQUEST_URL) #リクエストしたデータをresに代入
+        
+        #BBCでのスクレイピング機能
+        soup = BeautifulSoup(res.text,"html.parser")
+        content = soup.select('#main-content > article')
+        lines = []
+        for t in content:
+            lines.append(t.text)
+        article = ' '.join(lines) #辞書型からテキストに変更
+        
+        #ChatGPTでの翻訳機能
+        def run_gpt(content_to_text):
+            request_to_gpt = "以下を日本語に翻訳したうえで100文字以内で要約してください。" + content_to_text
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": request_to_gpt},
-            ],
-        )
-    
-        output_content = response.choices[0]["message"]["content"].strip()
-        return output_content
-    
-    output_content_text = run_gpt(article)
-    st.write("要約:" + output_content_text)
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "user", "content": request_to_gpt},
+                ],
+            )
+        
+            output_content = response.choices[0]["message"]["content"].strip()
+            return output_content
+        
+        output_content_text = run_gpt(article)
+        st.write("要約:" + output_content_text)
     
