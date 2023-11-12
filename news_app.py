@@ -1,8 +1,11 @@
 import streamlit as st
+from PIL import Image
+import time
 from newsapi import NewsApiClient  #News APIから記事情報を取得
 import pandas as pd
 import openai #ChatGPTでの翻訳機能
 from datetime import datetime, timedelta# 現在時刻などの時間を扱う機能をインポート
+
 
 # 環境ファイルからAPI KEYを指定するのに使用
 import os
@@ -95,8 +98,10 @@ def add_japanese_column(data_articles):
     return data_articles
 
 
-
 st.title("Newsアプリ") # タイトル
+
+image = Image.open('newspaperimage.jpg') #新聞画像挿入
+st.image(image, caption=None)
 
 st.session_state.set_keyword= st.selectbox("キーワードを選択してください", set_keyword_list.keys())
 st.session_state.set_domains = st.selectbox("ソースを選択してください", set_domains_list.keys())
@@ -107,7 +112,9 @@ st.session_state.number_of_part = st.slider('表示する記事の数', 1, 20, 5
 # ボタンを押した時に記事取得->タイトル翻訳表示が行われるようにしたい
 if st.button("Get Articles", type="primary") :
     st.session_state.article_blank = True  # Tureの時のみ、後段のif内が実行される
-
+with st.spinner("タイトル取得中です"):
+    time.sleep(5)
+    st.success('Done')
 
 if st.session_state.article_blank :
     
@@ -133,6 +140,11 @@ if st.session_state.article_blank :
         st.session_state.index_japanese_title_pair_list.append(_str)
  
     st.session_state.article_blank = None  # 記事を取得、翻訳済みなのでNoneにする
+
+
+
+
+st.write(st.session_state.index_japanese_title_pair_list)
     
 # ラジオボタンで記事を選択する
 set_article = st.radio(
