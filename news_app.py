@@ -53,7 +53,7 @@ def get_articles(keyword, domains, date_from_param, date_to):
                                         from_param=date_from_param,
                                         to=date_to,
                                         language='en',
-                                        #sort_by='relevancy',
+                                        sort_by='popularity',
                                         #page=2
                                         )
 
@@ -187,7 +187,7 @@ if set_article != None :
     
     #ChatGPTでの翻訳機能
     def run_gpt(content_to_text):
-        request_to_gpt = "以下を日本語に翻訳し、翻訳した文章を100文字以内で要約してください。" + content_to_text
+        request_to_gpt = "以下を日本語に翻訳したうえで100文字以内で要約してください。" + content_to_text
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
